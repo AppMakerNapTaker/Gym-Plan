@@ -1,0 +1,18 @@
+{
+  "name": "Tomer's Gym Plan",
+  "short_name": "Gym Plan",
+  "description": "5-Day Strength & Hypertrophy Program",
+  "start_url": "./Weekly_Workout_Plan.html",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#e8b84b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

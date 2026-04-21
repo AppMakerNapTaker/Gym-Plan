@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tomer's Gym Plan</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gym Plan">
+<meta name="theme-color" content="#e8b84b">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f0f; color: #e8e8e8; line-height: 1.5; }
+
+  .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); padding: 48px 24px 40px; text-align: center; border-bottom: 1px solid #222; }
+  .hero h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; color: #fff; margin-bottom: 8px; }
+  .hero .subtitle { color: #aaa; font-size: 0.95rem; margin-bottom: 20px; }
+  .hero-stats { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; }
+  .hero-stat .val { font-size: 1.5rem; font-weight: 700; color: #e8b84b; }
+  .hero-stat .lbl { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 20px 24px; max-width: 900px; margin: 0 auto; }
+  .week-day { background: #1a1a1a; border-radius: 10px; padding: 12px 10px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+  .week-day:hover { border-color: #e8b84b; background: #222; }
+  .week-day.active { border-color: #e8b84b; background: #1e1a0f; }
+  .week-day .day-label { font-size: 0.65rem; text-transform: uppercase; color: #666; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .week-day .day-name { font-size: 0.8rem; font-weight: 700; color: #e8e8e8; margin-bottom: 4px; }
+  .week-day .day-focus { font-size: 0.65rem; color: #aaa; }
+  .week-day .day-dot { width: 8px; height: 8px; border-radius: 50%; margin: 6px auto 0; }
+  .dot-push { background: #e85d4a; } .dot-lower { background: #4aade8; }
+  .dot-cardio { background: #4ae8a0; } .dot-pull { background: #a04ae8; } .dot-cond { background: #e8b84b; }
+
+  .content { max-width: 900px; margin: 0 auto; padding: 0 24px 60px; }
+  .day-section { display: none; }
+  .day-section.visible { display: block; }
+
+  .day-header { padding: 28px 0 16px; }
+  .day-header .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .badge-push { background: rgba(232,93,74,0.2); color: #e85d4a; }
+  .badge-lower { background: rgba(74,173,232,0.2); color: #4aade8; }
+  .badge-cardio { background: rgba(74,232,160,0.2); color: #4ae8a0; }
+  .badge-pull { background: rgba(160,74,232,0.2); color: #a04ae8; }
+  .badge-cond { background: rgba(232,184,75,0.2); color: #e8b84b; }
+  .day-header h2 { font-size: 1.6rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .day-header p { color: #888; font-size: 0.9rem; }
+
+  .section-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #222; }
+
+  .exercise-card { background: #1a1a1a; border-radius: 14px; margin-bottom: 10px; overflow: hidden; border: 1px solid #252525; transition: border-color 0.2s; }
+  .exercise-card:hover { border-color: #333; }
+  .exercise-header { display: flex; align-items: center; padding: 14px 16px; gap: 14px; cursor: pointer; }
+  .ex-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .ex-icon-push { background: rgba(232,93,74,0.15); }
+  .ex-icon-pull { background: rgba(160,74,232,0.15); }
+  .ex-icon-legs { background: rgba(74,173,232,0.15); }
+  .ex-icon-core { background: rgba(74,232,160,0.15); }
+  .ex-icon-cardio { background: rgba(232,184,75,0.15); }
+  .ex-icon-mobility { background: rgba(255,255,255,0.06); }
+  .ex-main { flex: 1; min-width: 0; }
+  .ex-name { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .ex-muscles { font-size: 0.72rem; color: #888; }
+  .ex-sets-row { display: flex; gap: 8px; flex-shrink: 0; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .ex-pill { background: #252525; border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; font-weight: 600; color: #ccc; white-space: nowrap; }
+  .ex-pill.sets { color: #e8b84b; background: rgba(232,184,75,0.1); }
+  .ex-chevron { color: #555; font-size: 0.8rem; transition: transform 0.2s; margin-left: 4px; flex-shrink: 0; }
+  .exercise-card.open .ex-chevron { transform: rotate(180deg); }
+
+  .exercise-body { display: none; padding: 0 16px 16px; border-top: 1px solid #222; }
+  .exercise-card.open .exercise-body { display: block; }
+
+  .form-cues { margin-top: 14px; }
+  .form-cues h4 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 10px; }
+  .cue-list { display: flex; flex-direction: column; gap: 7px; }
+  .cue-item { display: flex; gap: 10px; align-items: flex-start; font-size: 0.85rem; color: #bbb; }
+  .cue-num { width: 20px; height: 20px; border-radius: 50%; background: #252525; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #888; flex-shrink: 0; margin-top: 1px; }
+
+  .watch-btn { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; background: rgba(255,0,0,0.15); border: 1px solid rgba(255,0,0,0.25); color: #ff6b6b; padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; text-decoration: none; transition: all 0.2s; cursor: pointer; }
+  .watch-btn:hover { background: rgba(255,0,0,0.25); color: #ff4444; }
+
+  .note-box { background: rgba(232,184,75,0.08); border: 1px solid rgba(232,184,75,0.2); border-radius: 10px; padding: 12px 14px; margin: 14px 0; font-size: 0.82rem; color: #c9a840; }
+  .note-box strong { color: #e8b84b; }
+
+  .cardio-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; }
+  .cardio-option { background: #1a1a1a; border: 1px solid #252525; border-radius: 12px; padding: 14px; }
+  .cardio-option .co-icon { font-size: 1.4rem; margin-bottom: 6px; }
+  .cardio-option .co-name { font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
+  .cardio-option .co-desc { font-size: 0.75rem; color: #888; }
+  .cardio-option .co-rec { font-size: 0.7rem; color: #4ae8a0; margin-top: 6px; font-weight: 600; }
+
+  .prog-box { background: #1a1a1a; border: 1px solid #252525; border-radius: 14px; padding: 18px; margin-top: 20px; }
+  .prog-box h3 { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .prog-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; font-size: 0.85rem; }
+  .prog-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .prog-row .weeks { color: #888; }
+  .prog-row .action { color: #e8e8e8; font-weight: 600; }
+
+  @media (max-width: 600px) {
+    .week-grid { gap: 5px; padding: 16px; }
+    .week-day { padding: 10px 6px; }
+    .week-day .day-name { font-size: 0.7rem; }
+    .week-day .day-focus { display: none; }
+    .cardio-options { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 1.5rem; }
+    .ex-sets-row { display: none; }
+  }
+
+  /* YT icon */
+  .yt { width: 14px; height: 14px; fill: currentColor; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Tomer's 5-Day Program</h1>
+  <p class="subtitle">Strength + Hypertrophy · Intermediate · 45–60 min · Building Gym</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="val">5</div><div class="lbl">Days/Week</div></div>
+    <div class="hero-stat"><div class="val">3</div><div class="lbl">Lifting Days</div></div>
+    <div class="hero-stat"><div class="val">1</div><div class="lbl">Cardio Day</div></div>
+    <div class="hero-stat"><div class="val">1</div><div class="lbl">Conditioning</div></div>
+  </div>
+</div>
+
+<div class="week-grid">
+  <div class="week-day active" onclick="showDay('day1')" id="nav-day1">
+    <div class="day-label">Mon</div><div class="day-name">Upper A</div><div class="day-focus">Push Focus</div>
+    <div class="day-dot dot-push"></div>
+  </div>
+  <div class="week-day" onclick="showDay('day2')" id="nav-day2">
+    <div class="day-label">Tue</div><div class="day-name">Lower</div><div class="day-focus">Legs + Hinge</div>
+    <div class="day-dot dot-lower"></div>
+  </div>
+  <div class="week-day" onclick="showDay('day3')" id="nav-day3">
+    <div class="day-label">Wed</div><div class="day-name">Recovery</div><div class="day-focus">Cardio + Mobility</div>
+    <div class="day-dot dot-cardio"></div>
+  </div>
+  <div class="week-day" onclick="showDay('day4')" id="nav-day4">
+    <div class="day-label">Thu</div><div class="day-name">Upper B</div><div class="day-focus">Pull Focus</div>
+    <div class="day-dot dot-pull"></div>
+  </div>
+  <div class="week-day" onclick="showDay('day5')" id="nav-day5">
+    <div class="day-label">Fri</div><div class="day-name">Conditioning</div><div class="day-focus">Full Body</div>
+    <div class="day-dot dot-cond"></div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════════════════════ DAY 1 ═══ -->
+<div id="day1" class="day-section visible">
+  <div class="day-header">
+    <div class="badge badge-push">Monday</div>
+    <h2>Upper Body A — Push Focus</h2>
+    <p>Chest emphasis with complementary pulling. One press, one fly, one row — balanced and efficient.</p>
+  </div>
+
+  <div class="section-label">Warm-Up (5–8 min)</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🌀</div>
+      <div class="ex-main"><div class="ex-name">Side-Lying Windmill</div><div class="ex-muscles">Thoracic spine · Chest opener · Shoulder prep</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">1 set × 8/side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Lie on your side with knees stacked and bent at 90°, arms extended forward at shoulder height</div>
+        <div class="cue-item"><div class="cue-num">2</div>Keeping knees stacked and still, sweep your top arm up and over, opening your chest to the ceiling</div>
+        <div class="cue-item"><div class="cue-num">3</div>Let your gaze follow the hand — look toward the ceiling</div>
+        <div class="cue-item"><div class="cue-num">4</div>Pause at end range, breathe into the stretch, slowly return. Move slow — this is not a stretch to rush</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=side+lying+windmill+thoracic+mobility" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-pull">🔽</div>
+      <div class="ex-main"><div class="ex-name">Straight Arm Cable Pulldown</div><div class="ex-muscles">Lats · Teres major · Shoulder prep</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div><div class="ex-pill">Moderate wt</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Set cable high on the functional trainer, attach a straight bar or rope. Stand back one step, slight hip hinge</div>
+        <div class="cue-item"><div class="cue-num">2</div>Arms almost straight, pull the bar down in an arc toward your hips — like closing a cape</div>
+        <div class="cue-item"><div class="cue-num">3</div>Think "lats to pockets" — sides of the back doing the work, not your arms</div>
+        <div class="cue-item"><div class="cue-num">4</div>Slow controlled return. Perfect shoulder warm-up before pressing</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=straight+arm+cable+pulldown+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Main Work</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">💪</div>
+      <div class="ex-main"><div class="ex-name">Incline DB Bench Press (30°)</div><div class="ex-muscles">Upper chest · Front deltoid · Triceps</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 8–10</div><div class="ex-pill">90 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Why 30°?</strong> A shallow incline hits the upper chest without dumping load onto the shoulder joint. Your main pressing movement of the week — use a challenging weight you can control for all reps.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Set bench to 30°. Sit with DBs on your thighs, kick them up as you lean back</div>
+        <div class="cue-item"><div class="cue-num">2</div>DBs at upper chest, elbows at 60–75° from your torso (not flared to 90°)</div>
+        <div class="cue-item"><div class="cue-num">3</div>Press up and slightly together — don't lock elbows at the top, keep tension on chest</div>
+        <div class="cue-item"><div class="cue-num">4</div>Lower slowly (2–3 sec) — feel the stretch across the chest at the bottom</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=incline+dumbbell+bench+press+30+degrees+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">🦋</div>
+      <div class="ex-main"><div class="ex-name">Cable Chest Fly</div><div class="ex-muscles">Chest · Stretch-focused · Pec isolation</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div><div class="ex-pill">90 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Different stimulus to the press above.</strong> A fly stretches the pecs under load — something a press can't do. Set both cables at chest height on the functional trainer, stand in the middle, and fly. Light-moderate weight only.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Set both cable pulleys to chest height. Stand in the center, one handle in each hand, slight step forward</div>
+        <div class="cue-item"><div class="cue-num">2</div>Slight bend in elbows (locked, not moving). Open arms wide until you feel a deep chest stretch</div>
+        <div class="cue-item"><div class="cue-num">3</div>Bring hands together in front of your chest — imagine hugging a barrel. Squeeze chest at the end</div>
+        <div class="cue-item"><div class="cue-num">4</div>Control the return — the stretch phase is where the growth happens, don't rush it</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=cable+chest+fly+functional+trainer+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-pull">⬇️</div>
+      <div class="ex-main"><div class="ex-name">Single Arm Cable Lat Pulldown (kneeling)</div><div class="ex-muscles">Lats · Teres major · Biceps</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 10/side</div><div class="ex-pill">90 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>No lat pulldown machine?</strong> Set one cable to its highest point on the functional trainer, attach a single handle, and kneel directly underneath. Identical movement, same results — and single arm work fixes left/right imbalances.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Cable high, single handle. Kneel directly under it, grab handle with one hand overhead</div>
+        <div class="cue-item"><div class="cue-num">2</div>Slight lean away from the cable to increase the lat stretch at the top</div>
+        <div class="cue-item"><div class="cue-num">3</div>Pull the handle down toward your hip — drive elbow down and back into your pocket</div>
+        <div class="cue-item"><div class="cue-num">4</div>Slow return — feel the lat lengthen. Complete all reps on one side before switching</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=single+arm+cable+lat+pulldown+kneeling+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-pull">🔄</div>
+      <div class="ex-main"><div class="ex-name">Single Arm DB Row</div><div class="ex-muscles">Mid-back · Rhomboids · Rear deltoid</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 10/side</div><div class="ex-pill">90 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>No seated row machine or seat.</strong> The single arm DB row is actually superior — you get a longer range of motion and can feel each side working independently. Use the bench for support.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Place one hand and same-side knee on the bench. Other foot flat on the floor. Back flat, parallel to floor</div>
+        <div class="cue-item"><div class="cue-num">2</div>Hold DB in the free hand, let it hang straight down from your shoulder</div>
+        <div class="cue-item"><div class="cue-num">3</div>Row DB up to hip/lower rib — drive elbow up and back. Don't rotate your torso to get more range</div>
+        <div class="cue-item"><div class="cue-num">4</div>Lower slowly — full arm extension at the bottom to stretch the back before the next rep</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=single+arm+dumbbell+row+bench+form+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">↔️</div>
+      <div class="ex-main"><div class="ex-name">DB Lateral Raise</div><div class="ex-muscles">Lateral deltoid · Shoulder width</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 12–15</div><div class="ex-pill">Last set → failure</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Stand with DBs at sides, slight forward lean at hips, slight bend at elbows</div>
+        <div class="cue-item"><div class="cue-num">2</div>Raise arms to the sides until parallel to floor — lead with elbows, not hands</div>
+        <div class="cue-item"><div class="cue-num">3</div>Think "pouring a jug" — tilt pinky slightly up at the top for maximum lateral head activation</div>
+        <div class="cue-item"><div class="cue-num">4</div>Lower slowly (3 sec). No swinging — lighter with control beats heavy and sloppy</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=dumbbell+lateral+raise+proper+form+no+swinging" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-pull">💪</div>
+      <div class="ex-main"><div class="ex-name">Bicep Curl (DB or EZ Bar)</div><div class="ex-muscles">Biceps · Brachialis</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2–3 sets × 10–12</div><div class="ex-pill">Last set → failure</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Stand with DBs at sides, palms forward. Elbows pinned to your sides — they shouldn't move</div>
+        <div class="cue-item"><div class="cue-num">2</div>Curl up in a smooth arc, squeeze hard at the top — full contraction</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lower slowly — 3 sec down. The eccentric is where a lot of growth happens</div>
+        <div class="cue-item"><div class="cue-num">4</div>If you're swinging your body, the weight is too heavy</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=bicep+curl+proper+form+dumbbell+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Core (finish strong)</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-core">🎯</div>
+      <div class="ex-main"><div class="ex-name">Cable Crunch</div><div class="ex-muscles">Rectus abdominis · Upper abs</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Key reminder:</strong> Movement comes from your spine rounding, NOT your hips hinging. Think ribcage toward pelvis.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Kneel facing the cable, rope attachment at high position. Hold rope at sides of your head</div>
+        <div class="cue-item"><div class="cue-num">2</div>Crunch DOWN — round your spine, elbows toward knees. Hips stay still</div>
+        <div class="cue-item"><div class="cue-num">3</div>Hold at the bottom 1 sec — squeeze abs like someone's about to punch you</div>
+        <div class="cue-item"><div class="cue-num">4</div>Control the return. Don't let the weight pull you back</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=cable+crunch+proper+form+kneeling+abs" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-core">🌀</div>
+      <div class="ex-main"><div class="ex-name">Cable Rotation</div><div class="ex-muscles">Obliques · Rotational core</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12/side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Cable at chest height. Stand sideways, hold handle with both hands at chest</div>
+        <div class="cue-item"><div class="cue-num">2</div>Rotate torso AWAY from the cable — controlled rotation through the core</div>
+        <div class="cue-item"><div class="cue-num">3</div>Resist the return — the cable pulling you back is where the oblique work happens</div>
+        <div class="cue-item"><div class="cue-num">4</div>Feet stay planted. Rotation from spine, not hips swinging</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=cable+rotation+core+obliques+form+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ DAY 2 ═══ -->
+<div id="day2" class="day-section">
+  <div class="day-header">
+    <div class="badge badge-lower">Tuesday</div>
+    <h2>Lower Body + Mobility</h2>
+    <p>Full leg session. Mobility warm-up is mandatory before loading any weight.</p>
+  </div>
+
+  <div class="section-label">Mobility Warm-Up (10 min) — Do this before anything else</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🧘</div>
+      <div class="ex-main"><div class="ex-name">3-Way Hip Opener (Couch Stretch)</div><div class="ex-muscles">Hip flexors · Quads · Groin</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">60 sec each position</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Position 1: Kneel with rear foot propped on the bench behind you, front foot forward — deep lunge. Lean back slightly to open hip flexor</div>
+        <div class="cue-item"><div class="cue-num">2</div>Position 2: From the same position, rotate torso toward your front leg to open the groin/adductor</div>
+        <div class="cue-item"><div class="cue-num">3</div>Position 3: Shift weight slightly back over rear knee to open the quad</div>
+        <div class="cue-item"><div class="cue-num">4</div>Hold each 30–60 sec. Breathe deeply into the tight areas — don't fight the stretch</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=3+way+hip+opener+couch+stretch+mobility" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🦅</div>
+      <div class="ex-main"><div class="ex-name">Floor Pigeon Pose</div><div class="ex-muscles">Glutes · Piriformis · Hip external rotators</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">60 sec / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>From all-fours, bring one shin forward and place it on the floor in front of you (roughly perpendicular)</div>
+        <div class="cue-item"><div class="cue-num">2</div>Extend the other leg straight back behind you. Let your hips sink toward the floor</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lean your torso forward over the front shin — feel the deep glute stretch on the front leg</div>
+        <div class="cue-item"><div class="cue-num">4</div>The more your front shin is perpendicular (vs angled), the deeper the stretch. Start where you're comfortable</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=pigeon+pose+floor+hip+stretch+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">✈️</div>
+      <div class="ex-main"><div class="ex-name">Hip Airplanes</div><div class="ex-muscles">Hip stabilizers · Glute med · Balance</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">8 reps / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Stand on one foot (hold the rack for balance at first). Hinge slightly forward at the hip</div>
+        <div class="cue-item"><div class="cue-num">2</div>Rotate your pelvis: one hip up toward ceiling, then down — like spinning a propeller around the hip</div>
+        <div class="cue-item"><div class="cue-num">3</div>Standing leg stays stable — all movement is controlled hip rotation</div>
+        <div class="cue-item"><div class="cue-num">4</div>8 slow reps each way. Trains the stabilizers you need for squats and single-leg work</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=hip+airplanes+exercise+hip+stability" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-legs">🏋️</div>
+      <div class="ex-main"><div class="ex-name">Goblet Squat (warm-up)</div><div class="ex-muscles">Quads · Hips · Ankle mobility</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 10</div><div class="ex-pill">Light KB</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Hold a light KB at chest (goblet position). Feet shoulder-width, toes slightly out</div>
+        <div class="cue-item"><div class="cue-num">2</div>Squat deep — the KB counterbalance lets you sit upright and reach full depth</div>
+        <div class="cue-item"><div class="cue-num">3</div>Push knees out over toes — use elbows to gently pry knees open at the bottom</div>
+        <div class="cue-item"><div class="cue-num">4</div>Perfect movement prep before loading the barbell squat</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=goblet+squat+form+tutorial+mobility" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Main Work</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-legs">🦵</div>
+      <div class="ex-main"><div class="ex-name">Barbell Back Squat</div><div class="ex-muscles">Quads · Glutes · Core</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 8–10</div><div class="ex-pill">2–3 min rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Your rack is right there — use it.</strong> Start lighter than you think you need to. Perfect form at moderate weight is far more productive than grinding ugly heavy reps.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Bar on upper traps (not neck). Feet shoulder-width, toes out 15–30°</div>
+        <div class="cue-item"><div class="cue-num">2</div>Big breath in, brace core (like taking a punch), unrack and step back</div>
+        <div class="cue-item"><div class="cue-num">3</div>Break hips and knees simultaneously — sit back and down. Push knees out. Hit parallel or below</div>
+        <div class="cue-item"><div class="cue-num">4</div>Drive through whole foot to stand. Squeeze glutes at the top. Breathe out at the top</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=barbell+back+squat+proper+form+beginners" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-legs">⬆️</div>
+      <div class="ex-main"><div class="ex-name">Barbell Romanian Deadlift (RDL)</div><div class="ex-muscles">Hamstrings · Glutes · Lower back</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 10–12</div><div class="ex-pill">2 min rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Barbell vs DBs:</strong> Use the barbell — it lets you load heavier over time and is easy to set up in the rack. The RDL is NOT a conventional deadlift. You don't lower the bar to the floor. It's a hamstring stretch movement.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Take the bar out of the rack, hold at hip level. Feet hip-width, soft knee bend</div>
+        <div class="cue-item"><div class="cue-num">2</div>Push hips BACK — not down. Bar slides down your thighs and shins</div>
+        <div class="cue-item"><div class="cue-num">3</div>Stop when you feel a deep hamstring stretch (around mid-shin). Back flat throughout</div>
+        <div class="cue-item"><div class="cue-num">4</div>Drive hips forward to stand — squeeze glutes at top. This is a hinge, not a squat</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=barbell+romanian+deadlift+RDL+form+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-legs">🦿</div>
+      <div class="ex-main"><div class="ex-name">Bulgarian Split Squat (DB)</div><div class="ex-muscles">Quads · Glutes · Single-leg stability</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 8–10/side</div><div class="ex-pill">90 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Expect to be humbled.</strong> Most people find this harder than squatting twice the weight. It fixes left/right imbalances and develops the single-leg strength that carries over into everything.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Hold a DB in each hand. Place rear foot on the bench — top of foot facing down</div>
+        <div class="cue-item"><div class="cue-num">2</div>Front foot far enough forward that your knee doesn't cave inward as you descend</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lower back knee toward the floor — torso upright. Front knee tracks over toes</div>
+        <div class="cue-item"><div class="cue-num">4</div>Drive through the front heel to stand. All reps one side before switching</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=bulgarian+split+squat+dumbbell+form+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-legs">🔔</div>
+      <div class="ex-main"><div class="ex-name">Kettlebell Swings</div><div class="ex-muscles">Hamstrings · Glutes · Core · Power</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 15</div><div class="ex-pill">60 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Hinge, not squat.</strong> Power comes from snapping the hips forward — not from bending and straightening your knees. One of the best posterior chain and conditioning exercises you can do.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Stand feet shoulder-width, KB a foot in front of you. Hike it back between your legs like a football</div>
+        <div class="cue-item"><div class="cue-num">2</div>Explosively snap hips forward — stand up hard and fast. Let KB float to shoulder height</div>
+        <div class="cue-item"><div class="cue-num">3</div>Let it swing back down, hinge to absorb, immediately repeat</div>
+        <div class="cue-item"><div class="cue-num">4</div>Arms are just guides — all power comes from the hips. Think "hip snap"</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=kettlebell+swing+proper+form+hip+hinge+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Core</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-core">🏋️</div>
+      <div class="ex-main"><div class="ex-name">Hanging Knee Raises</div><div class="ex-muscles">Lower abs · Hip flexors · Grip</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Hang from the pull-up bar. Pack your shoulders — don't just hang limply</div>
+        <div class="cue-item"><div class="cue-num">2</div>Bring knees to chest — think about PULLING your pelvis upward, not just lifting legs</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lower slowly and with control — no swinging</div>
+        <div class="cue-item"><div class="cue-num">4</div>Progress to straight leg raises when this feels easy</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=hanging+knee+raises+lower+abs+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Cool-Down (4 min)</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🦅</div>
+      <div class="ex-main"><div class="ex-name">Floor Pigeon + Seated Hamstring Stretch</div><div class="ex-muscles">Glutes · Piriformis · Hamstrings</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">60 sec / side each</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Pigeon: From all-fours, bring one shin forward, extend other leg back. Let hips sink. Hold 60 sec/side — releases everything you just loaded in squats</div>
+        <div class="cue-item"><div class="cue-num">2</div>Hamstring: Sit on floor, legs straight. Reach toward your feet — feel the pull in the back of the thighs. Hold 45 sec/side</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=pigeon+pose+hamstring+stretch+cool+down+leg+day" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🧘</div>
+      <div class="ex-main"><div class="ex-name">Kneeling Hip Flexor Stretch</div><div class="ex-muscles">Hip flexors · Quads</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">60 sec / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Kneel on one knee, front foot forward (lunge position). Tuck pelvis slightly — don't let your lower back arch</div>
+        <div class="cue-item"><div class="cue-num">2</div>Shift forward gently until you feel the stretch in the front of the back hip. Hold 60 sec/side</div>
+        <div class="cue-item"><div class="cue-num">3</div>Critical after heavy squats and RDLs — these hip flexors get compressed every rep</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=kneeling+hip+flexor+stretch+after+leg+day" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ DAY 3 ═══ -->
+<div id="day3" class="day-section">
+  <div class="day-header">
+    <div class="badge badge-cardio">Wednesday</div>
+    <h2>Active Recovery — Cardio + Mobility</h2>
+    <p>No lifting. Accelerates recovery, builds aerobic base, keeps joints healthy. Tap each stretch to see how it's done.</p>
+  </div>
+
+  <div class="section-label">Cardio — Pick One (20–25 min)</div>
+  <div class="cardio-options">
+    <div class="cardio-option">
+      <div class="co-icon">🚣</div><div class="co-name">Rowing Machine</div>
+      <div class="co-desc">Steady 70% effort. Best full-body option.</div>
+      <div class="co-rec">★ Recommended</div>
+    </div>
+    <div class="cardio-option">
+      <div class="co-icon">🚴</div><div class="co-name">Air Bike</div>
+      <div class="co-desc">10 rounds: 20 sec hard / 40 sec easy.</div>
+      <div class="co-rec">Best for short sessions</div>
+    </div>
+    <div class="cardio-option">
+      <div class="co-icon">🏃</div><div class="co-name">Treadmill</div>
+      <div class="co-desc">Brisk walk, incline 8–12%.</div>
+      <div class="co-rec">Easy on joints</div>
+    </div>
+    <div class="cardio-option">
+      <div class="co-icon">🌀</div><div class="co-name">Elliptical</div>
+      <div class="co-desc">20 min moderate. Best if legs are sore.</div>
+      <div class="co-rec">Low impact option</div>
+    </div>
+  </div>
+
+  <div class="section-label">Mobility Circuit — 2 Rounds · Tap each to expand</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🌍</div>
+      <div class="ex-main"><div class="ex-name">World's Greatest Stretch</div><div class="ex-muscles">Hip flexors · Thoracic spine · Shoulders</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">5 reps / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Start in a lunge — front foot flat, back knee off the floor</div>
+        <div class="cue-item"><div class="cue-num">2</div>Place same-side hand as front foot on the floor inside your foot</div>
+        <div class="cue-item"><div class="cue-num">3</div>Rotate your top arm to the ceiling, opening your chest — follow with your gaze</div>
+        <div class="cue-item"><div class="cue-num">4</div>Return, repeat with the other arm — 5 reps each side moving slowly</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=world%27s+greatest+stretch+form+mobility" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🧵</div>
+      <div class="ex-main"><div class="ex-name">Thread the Needle</div><div class="ex-muscles">Thoracic rotation · Fixes rounded posture</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">8 reps / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Start on all-fours, hands under shoulders, knees under hips</div>
+        <div class="cue-item"><div class="cue-num">2</div>Take one arm and "thread" it under your body through the gap between your other arm and knee</div>
+        <div class="cue-item"><div class="cue-num">3</div>Let your shoulder and head rotate and rest on the floor — feel the thoracic stretch</div>
+        <div class="cue-item"><div class="cue-num">4</div>Hold briefly, return, repeat 8 times each side</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=thread+the+needle+thoracic+rotation+mobility" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🔁</div>
+      <div class="ex-main"><div class="ex-name">Hip 90/90 Transitions</div><div class="ex-muscles">Hip internal + external rotation</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">10 reps / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Sit on the floor with both legs bent at 90° — one in front, one to the side</div>
+        <div class="cue-item"><div class="cue-num">2</div>Rotate both legs over to the other side in one movement — your front leg becomes the back leg</div>
+        <div class="cue-item"><div class="cue-num">3</div>Move slowly and with control — don't flop, rotate through your hips</div>
+        <div class="cue-item"><div class="cue-num">4</div>Stay upright as much as possible — hands can be lightly on floor for support</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=hip+90+90+transitions+mobility+exercise" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🦅</div>
+      <div class="ex-main"><div class="ex-name">Floor Pigeon Pose</div><div class="ex-muscles">Glutes · Piriformis · Hip external rotators</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">60 sec / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>From all-fours, bring one shin forward and set it roughly horizontal on the floor</div>
+        <div class="cue-item"><div class="cue-num">2</div>Extend the other leg straight back. Let hips sink toward the floor</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lean torso forward over the front shin — feel the deep glute stretch</div>
+        <div class="cue-item"><div class="cue-num">4</div>Breathe deeply and relax into it — essential for hip health and lower back</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=pigeon+pose+floor+yoga+hip+opener+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🧎</div>
+      <div class="ex-main"><div class="ex-name">Kneeling Hip Flexor Stretch</div><div class="ex-muscles">Hip flexors · Psoas · Undoes sitting</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">60 sec / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Kneel on one knee, other foot forward (half-kneeling). Back knee on a mat or folded towel</div>
+        <div class="cue-item"><div class="cue-num">2</div>Shift your hips gently forward — feel the stretch on the front of the rear hip</div>
+        <div class="cue-item"><div class="cue-num">3</div>Keep your torso upright — don't lean forward or arch your lower back</div>
+        <div class="cue-item"><div class="cue-num">4</div>For a deeper stretch: reach the same arm as the back knee overhead and lean slightly away</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=kneeling+hip+flexor+stretch+proper+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🐱</div>
+      <div class="ex-main"><div class="ex-name">Cat-Cow</div><div class="ex-muscles">Spinal decompression · Segmental control</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">10 slow reps</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>On all-fours, hands under shoulders, knees under hips</div>
+        <div class="cue-item"><div class="cue-num">2</div>Cat: exhale and round your spine toward the ceiling — tuck tailbone, drop head</div>
+        <div class="cue-item"><div class="cue-num">3</div>Cow: inhale and let your belly drop, arch your back, lift head and tailbone</div>
+        <div class="cue-item"><div class="cue-num">4</div>Move slowly through the full range — 3–4 sec each direction. Breathe with the movement</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=cat+cow+stretch+spine+mobility+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🏋️</div>
+      <div class="ex-main"><div class="ex-name">Deep Squat Hold (hold the rack)</div><div class="ex-muscles">Ankle dorsiflexion · Hip depth · Adductors</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">60 sec hold</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Hold the rack uprights at hip height for balance. Feet shoulder-width, toes out slightly</div>
+        <div class="cue-item"><div class="cue-num">2</div>Lower into a full deep squat — go as low as you can while keeping heels on the floor</div>
+        <div class="cue-item"><div class="cue-num">3</div>Use your elbows to gently push your knees out — prying the hips open</div>
+        <div class="cue-item"><div class="cue-num">4</div>Breathe and relax into it. Every week you'll sink a little deeper</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=deep+squat+hold+mobility+ankle+hip" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🤲</div>
+      <div class="ex-main"><div class="ex-name">Chest Opener (hands clasped behind back)</div><div class="ex-muscles">Pecs · Anterior shoulder · Counters pressing</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 × 30 sec</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Stand tall, clasp hands behind your lower back, palms facing each other</div>
+        <div class="cue-item"><div class="cue-num">2</div>Squeeze shoulder blades together and lift hands slightly away from your body</div>
+        <div class="cue-item"><div class="cue-num">3</div>Open your chest to the ceiling — feel the stretch across the front of both shoulders</div>
+        <div class="cue-item"><div class="cue-num">4</div>Hold 30 sec, release, repeat 3 times. Important after heavy pressing days</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=chest+opener+stretch+hands+clasped+behind+back" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ DAY 4 ═══ -->
+<div id="day4" class="day-section">
+  <div class="day-header">
+    <div class="badge badge-pull">Thursday</div>
+    <h2>Upper Body B — Pull Focus</h2>
+    <p>Back, arms, and rear delts. Pull-ups are the centrepiece. Builds the thickness and V-taper that makes you look jacked.</p>
+  </div>
+
+  <div class="section-label">Warm-Up (5 min)</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-mobility">🌀</div>
+      <div class="ex-main"><div class="ex-name">Side-Lying Windmill</div><div class="ex-muscles">Thoracic spine · Shoulder prep</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">1 set × 8/side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>Same as Monday</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">→</div>Lie on side, knees stacked at 90°. Sweep top arm up and over, opening the chest. Follow with your gaze. Pause and breathe.</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=side+lying+windmill+thoracic+mobility" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-pull">🎯</div>
+      <div class="ex-main"><div class="ex-name">Cable Face Pull</div><div class="ex-muscles">Rear delts · Rotator cuff · Upper traps</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 15–20</div><div class="ex-pill">Moderate wt</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Shoulder health essential — never skip this.</strong> Face pulls counteract the internal rotation from all your pressing. They're injury prevention disguised as an exercise.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Cable at head height, rope attachment. Stand back, hold rope with thumbs facing you</div>
+        <div class="cue-item"><div class="cue-num">2</div>Pull rope toward your face, separating hands as it comes in — elbows HIGH and WIDE</div>
+        <div class="cue-item"><div class="cue-num">3</div>End position: elbows higher than shoulders, hands at ear level. Pause, squeeze rear delts</div>
+        <div class="cue-item"><div class="cue-num">4</div>Control the return. Not about weight — about activation</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=cable+face+pull+proper+form+rear+delt+shoulder+health" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Main Work</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">🏋️</div>
+      <div class="ex-main"><div class="ex-name">45° Incline DB Press</div><div class="ex-muscles">Upper chest · Anterior deltoid · Triceps</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 8–12</div><div class="ex-pill">90 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Upper chest work at a steeper angle than Monday.</strong> Monday uses 30° which blends chest and shoulder. Today's 45° shifts more emphasis onto the upper chest and anterior delt — a slightly different stimulus for more complete development.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Set bench to 45°. Sit back with DBs resting on thighs, kick them up as you lie back</div>
+        <div class="cue-item"><div class="cue-num">2</div>Start with DBs above your upper chest, palms forward, slight arch in lower back</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lower with control — elbows at 45–60° from torso, feel the stretch at the bottom</div>
+        <div class="cue-item"><div class="cue-num">4</div>Press back up and squeeze the chest at the top. Don't lock out hard — keep tension on</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=45+degree+incline+dumbbell+press+proper+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-pull">⬆️</div>
+      <div class="ex-main"><div class="ex-name">Pull-Ups</div><div class="ex-muscles">Lats · Biceps · Rear deltoid · Full back</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × max reps</div><div class="ex-pill">2–3 min rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>The best back exercise in the gym.</strong> Aim for 6–10 clean reps per set. When you can consistently hit 10, add a DB between your feet or use a belt. If you can't reach 6, use a resistance band for assistance.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Hang from the bar — full dead hang, arms straight, shoulders packed (not just dangling)</div>
+        <div class="cue-item"><div class="cue-num">2</div>Pull until chin clears the bar — drive elbows down and back toward your hips</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lower slowly all the way back to a dead hang — don't cut the range short</div>
+        <div class="cue-item"><div class="cue-num">4</div>No kipping — every rep strict and controlled. Quality over quantity</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=pull+up+proper+form+full+range+strict" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-pull">📐</div>
+      <div class="ex-main"><div class="ex-name">Half-Kneeling Cable Row</div><div class="ex-muscles">Mid-back · Rhomboids · Rear deltoid</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 10/side</div><div class="ex-pill">90 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>No seat needed.</strong> Kneel on one knee facing the cable. Single arm, pulling toward your hip. This position also trains anti-rotation core stability — a bonus.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Set cable to mid height. Kneel on one knee facing the machine, opposite knee up. Grab handle with the far hand</div>
+        <div class="cue-item"><div class="cue-num">2</div>Torso tall and upright — resist rotating as you pull</div>
+        <div class="cue-item"><div class="cue-num">3</div>Row the handle to your hip/lower ribs — drive elbow back. Squeeze at the end</div>
+        <div class="cue-item"><div class="cue-num">4</div>Slow controlled return. Core stays braced the whole time — don't twist</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=half+kneeling+cable+row+single+arm+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">🪶</div>
+      <div class="ex-main"><div class="ex-name">Bent-Over DB Rear Delt Fly</div><div class="ex-muscles">Posterior deltoid · Upper back</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 12–15</div><div class="ex-pill">60 sec rest</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>Use very light weight.</strong> Even 5–10 lbs will feel heavy if done correctly. This is direct posterior delt work — the face pull warm-up is activation only, this is your working set.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Hold light DBs, hinge forward at hips to about 45°, soft knee bend. Let arms hang below chest</div>
+        <div class="cue-item"><div class="cue-num">2</div>Raise arms out to the sides — like spreading wings. Slight elbow bend, lead with elbows</div>
+        <div class="cue-item"><div class="cue-num">3</div>Squeeze rear delts at the top — hold 1 sec. Think "trying to pinch a pencil between shoulder blades"</div>
+        <div class="cue-item"><div class="cue-num">4</div>Lower slowly. No shrugging the traps to get more range</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=bent+over+dumbbell+rear+delt+fly+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">↔️</div>
+      <div class="ex-main"><div class="ex-name">DB Lateral Raise</div><div class="ex-muscles">Lateral deltoid · Shoulder width</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div><div class="ex-pill">Last set → failure</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>DBs at sides, slight forward lean, slight elbow bend</div>
+        <div class="cue-item"><div class="cue-num">2</div>Raise arms to the sides to shoulder height — lead with elbows</div>
+        <div class="cue-item"><div class="cue-num">3</div>Tilt pinky slightly up at the top — maximises lateral delt activation</div>
+        <div class="cue-item"><div class="cue-num">4</div>Lower slowly (3 sec). Control beats heavy every time here</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=dumbbell+lateral+raise+proper+form+shoulders" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">⬇️</div>
+      <div class="ex-main"><div class="ex-name">Tricep Rope Pushdown</div><div class="ex-muscles">Triceps long head · Lateral head</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 12–15</div><div class="ex-pill">Last set → failure</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Cable high, rope attachment. Slight forward lean, elbows pinned to sides</div>
+        <div class="cue-item"><div class="cue-num">2</div>Push down and FLARE hands apart at the bottom — key for full tricep contraction</div>
+        <div class="cue-item"><div class="cue-num">3</div>Hold at the bottom 1 sec — feel the whole tricep squeezing</div>
+        <div class="cue-item"><div class="cue-num">4</div>Slow return to 90°. Elbows stay pinned throughout</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=tricep+rope+pushdown+proper+form+cable" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Core</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-core">🔃</div>
+      <div class="ex-main"><div class="ex-name">Reverse Crunch</div><div class="ex-muscles">Lower abs · Rectus abdominis</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Lie on back, hands at sides or gripping something above your head. Legs up, knees slightly bent</div>
+        <div class="cue-item"><div class="cue-num">2</div>Curl pelvis UP toward your chest — lift your hips off the floor, not just raise your legs</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lower slowly — abs control the descent, don't just drop</div>
+        <div class="cue-item"><div class="cue-num">4</div>Progress to decline bench when this feels easy</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=reverse+crunch+proper+form+lower+abs" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ DAY 5 ═══ -->
+<div id="day5" class="day-section">
+  <div class="day-header">
+    <div class="badge badge-cond">Friday</div>
+    <h2>Full Body Conditioning</h2>
+    <p>Bring the week together. Conditioning circuit + dedicated core work. Leave everything in the gym.</p>
+  </div>
+
+  <div class="section-label">Warm-Up</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-cardio">🚣</div>
+      <div class="ex-main"><div class="ex-name">Rowing Machine — Easy Warm-Up</div><div class="ex-muscles">Full body activation</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">5 min easy pace</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>Rowing technique</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">→</div>Sequence: legs drive first, then lean back, then pull arms. Return in reverse: arms forward, lean in, legs bend. Don't pull with your back before your legs finish pushing.</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=rowing+machine+proper+technique+for+beginners" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Circuit — 4 Rounds · 40 sec work / 20 sec rest · 90 sec between rounds</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-legs">🔔</div>
+      <div class="ex-main"><div class="ex-name">Kettlebell Swings</div><div class="ex-muscles">Glutes · Hamstrings · Core · Power</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">40 sec</div><div class="ex-pill">Moderate KB</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">→</div>Explosive hip snap — not a squat. Hike KB back, snap hips forward, let it float to shoulder height. See Tuesday for full cues.</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=kettlebell+swing+proper+form+hip+hinge" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-pull">⬆️</div>
+      <div class="ex-main"><div class="ex-name">Pull-Ups (max effort)</div><div class="ex-muscles">Back · Biceps</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">40 sec</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">→</div>As many clean reps as possible. When form breaks, switch to a resistance band for the remaining time. Don't kip — quality reps only.</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=pull+up+proper+form+strict" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">🏋️</div>
+      <div class="ex-main"><div class="ex-name">DB Thrusters (squat to press)</div><div class="ex-muscles">Quads · Shoulders · Full body</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">40 sec</div><div class="ex-pill">Light DBs</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>DBs at shoulders. Squat down to parallel</div>
+        <div class="cue-item"><div class="cue-num">2</div>Drive up explosively — use leg power to press DBs overhead in one fluid movement</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lower DBs back to shoulders as you descend into next squat</div>
+        <div class="cue-item"><div class="cue-num">4</div>Use lighter DBs than you think — these are brutal after KB swings and pull-ups</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=dumbbell+thruster+squat+to+press+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-cardio">🚣</div>
+      <div class="ex-main"><div class="ex-name">Rowing Machine Sprint</div><div class="ex-muscles">Full body · Max cardio</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">40 sec — max effort</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">→</div>Row as hard as you can for the full 40 sec. Aim for stroke rate 28–32 spm. This is the hardest interval in the circuit — give it everything you have left.</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=rowing+machine+HIIT+sprint+interval" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-push">💪</div>
+      <div class="ex-main"><div class="ex-name">Push-Ups</div><div class="ex-muscles">Chest · Triceps · Core</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">40 sec — max reps</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">→</div>Full range — chest to floor, full lockout. Body straight as a plank. When form breaks, go to knee push-ups to finish the 40 sec. No partial reps.</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=perfect+push+up+form+full+range" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="section-label">Core Finisher — 3 Rounds · Tap each for full instructions</div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-core">🧱</div>
+      <div class="ex-main"><div class="ex-name">Plank</div><div class="ex-muscles">Full core · Anti-extension stability</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">45 sec</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Forearms on floor, elbows under shoulders. Up on toes — body in one straight line</div>
+        <div class="cue-item"><div class="cue-num">2</div>Brace your abs like someone's about to kick you in the stomach — hold that tension the whole time</div>
+        <div class="cue-item"><div class="cue-num">3</div>Squeeze your glutes. Don't let your hips sag or pike up</div>
+        <div class="cue-item"><div class="cue-num">4</div>Breathe normally. Look at a spot on the floor — don't crane your neck up</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=plank+proper+form+core+exercise+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-core">🐛</div>
+      <div class="ex-main"><div class="ex-name">Dead Bug</div><div class="ex-muscles">Deep core · Anti-extension · Lower back protection</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">10 reps / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>One of the best core exercises you can do.</strong> Trains the deep stabilisers that protect your lower back — critical for anyone doing heavy squats and deadlifts.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Lie on your back. Arms straight up toward the ceiling. Knees bent at 90°, shins parallel to floor</div>
+        <div class="cue-item"><div class="cue-num">2</div>Flatten your lower back INTO the floor — this position must stay throughout. Don't let it arch</div>
+        <div class="cue-item"><div class="cue-num">3</div>Slowly lower one arm overhead AND the opposite leg toward the floor simultaneously</div>
+        <div class="cue-item"><div class="cue-num">4</div>Just above the floor, return and repeat the other side. Lower back stays flat the entire time</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=dead+bug+exercise+core+proper+form+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-core">🌀</div>
+      <div class="ex-main"><div class="ex-name">Russian Twists (with DB)</div><div class="ex-muscles">Obliques · Rotational core</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">15 reps / side</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Sit with knees bent, feet flat or slightly raised. Lean back to about 45° — hold that position</div>
+        <div class="cue-item"><div class="cue-num">2</div>Hold a DB with both hands. Rotate side to side, touching DB to the floor each side</div>
+        <div class="cue-item"><div class="cue-num">3</div>The rotation comes from your torso — don't just swing your arms</div>
+        <div class="cue-item"><div class="cue-num">4</div>Each touch to the floor = 1 rep. Control the movement — no flailing</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=russian+twists+dumbbell+obliques+form" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="exercise-card" onclick="toggleEx(this)">
+    <div class="exercise-header">
+      <div class="ex-icon ex-icon-core">⚡</div>
+      <div class="ex-main"><div class="ex-name">Hollow Body Hold</div><div class="ex-muscles">Deep abs · Full core compression</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">20–30 sec</div></div>
+      <div class="ex-chevron">▼</div>
+    </div>
+    <div class="exercise-body">
+      <div class="note-box"><strong>The hardest ab exercise in this program.</strong> If you can hold 30 sec with perfect form, your core is genuinely strong. Start at 10–15 sec if needed and build up.</div>
+      <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
+        <div class="cue-item"><div class="cue-num">1</div>Lie on your back. Arms overhead, legs straight. Press lower back FLAT into the floor</div>
+        <div class="cue-item"><div class="cue-num">2</div>Lift arms, shoulders, and legs off the floor simultaneously — creating a "banana" shape</div>
+        <div class="cue-item"><div class="cue-num">3</div>Lower back must stay pressed into the floor — if it arches, bend your knees or raise your legs higher</div>
+        <div class="cue-item"><div class="cue-num">4</div>Hold and breathe. If you can hold easily for 30 sec, add ankle weights or lower your legs</div>
+      </div></div>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=hollow+body+hold+gymnastics+core+tutorial" target="_blank">▶ Watch Demo</a>
+    </div>
+  </div>
+
+  <div class="prog-box">
+    <h3>8-Week Progression</h3>
+    <div class="prog-row"><span class="weeks">Weeks 1–2</span><span class="action">Learn exercises. Leave 2 reps in the tank. Build the habits.</span></div>
+    <div class="prog-row"><span class="weeks">Weeks 3–4</span><span class="action">Push to the top of rep ranges each session.</span></div>
+    <div class="prog-row"><span class="weeks">Weeks 5–6</span><span class="action">Add weight where you've maxed the rep range.</span></div>
+    <div class="prog-row"><span class="weeks">Weeks 7–8</span><span class="action">Max effort — aim for PRs on key exercises.</span></div>
+    <div class="prog-row"><span class="weeks">Week 9</span><span class="action">Deload — cut sets by 40%, keep same weight. Recover and grow.</span></div>
+  </div>
+</div>
+
+</div><!-- end .content -->
+
+<script>
+function showDay(dayId) {
+  document.querySelectorAll('.day-section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.week-day').forEach(d => d.classList.remove('active'));
+  document.getElementById(dayId).classList.add('visible');
+  document.getElementById('nav-' + dayId).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function toggleEx(card) {
+  card.classList.toggle('open');
+}
+
+// Generate emoji icon for apple-touch-icon (iOS home screen)
+(function() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 180; canvas.height = 180;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.moveTo(20, 0); ctx.lineTo(160, 0);
+  ctx.quadraticCurveTo(180, 0, 180, 20);
+  ctx.lineTo(180, 160);
+  ctx.quadraticCurveTo(180, 180, 160, 180);
+  ctx.lineTo(20, 180);
+  ctx.quadraticCurveTo(0, 180, 0, 160);
+  ctx.lineTo(0, 20);
+  ctx.quadraticCurveTo(0, 0, 20, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.font = '110px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🏋️', 88, 95);
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = canvas.toDataURL('image/png');
+  document.head.appendChild(link);
+})();
+
+// Register service worker for offline use
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+</body>
+</html>

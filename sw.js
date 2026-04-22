@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gym-plan-v1';
+const CACHE_NAME = 'gym-plan-v2';
 const FILES_TO_CACHE = [
   './Weekly_Workout_Plan.html',
   './manifest.json',

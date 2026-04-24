@@ -104,10 +104,8 @@
     .week-day .day-focus { display: none; }
     .cardio-options { grid-template-columns: 1fr 1fr; }
     .hero h1 { font-size: 1.5rem; }
-    .exercise-header { flex-wrap: wrap; }
-    .ex-main { width: 100%; min-width: 0; }
-    .ex-sets-row { order: 3; margin-left: 56px; flex-wrap: wrap; }
-    .ex-chevron { order: 2; }
+    .exercise-header { flex-wrap: wrap; align-items: center; }
+    .ex-sets-row { flex-basis: 100%; padding-left: 56px; flex-wrap: wrap; gap: 6px; justify-content: flex-start; margin: 0; padding-bottom: 6px; }
   }
 
   /* YT icon */
@@ -169,6 +167,13 @@
   /* ── Circuit start button ── */
   .circuit-launch-wrap { padding: 0 0 4px; }
   .circuit-launch-btn { width: 100%; background: linear-gradient(135deg, #e8b84b, #f0c460); color: #000; font-weight: 800; font-size: 0.95rem; border: none; border-radius: 12px; padding: 14px; cursor: pointer; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  /* ── Round tracker circles ── */
+  .round-tracker { display: flex; gap: 12px; justify-content: center; align-items: center; padding: 8px 0 14px; }
+  .round-tracker-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-right: 4px; }
+  .round-dot { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #333; cursor: pointer; transition: all 0.25s; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: transparent; background: transparent; }
+  .round-dot:hover { border-color: #e8b84b; }
+  .round-dot.filled { background: #e8b84b; border-color: #e8b84b; color: #000; }
 
   /* ── Circuit overlay ── */
   .circuit-overlay { position: fixed; inset: 0; background: #0a0a14; z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
@@ -1053,6 +1058,12 @@
   </div>
 
   <div class="section-label">Circuit — 3 Rounds · 40 sec work / 20 sec rest · 90 sec between rounds</div>
+  <div class="round-tracker">
+    <span class="round-tracker-label">Rounds</span>
+    <div class="round-dot" id="rd-1" onclick="toggleRoundDot(1)">1</div>
+    <div class="round-dot" id="rd-2" onclick="toggleRoundDot(2)">2</div>
+    <div class="round-dot" id="rd-3" onclick="toggleRoundDot(3)">3</div>
+  </div>
   <div class="circuit-launch-wrap">
     <button class="circuit-launch-btn" onclick="startCircuit()">▶ &nbsp;Start Circuit Timer</button>
   </div>
@@ -1141,7 +1152,7 @@
     <div class="exercise-header">
       <div class="ex-icon ex-icon-core">🦵</div>
       <div class="ex-main"><div class="ex-name">Hanging Knee Raises</div><div class="ex-muscles">Lower abs · Hip flexors · Core</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">12–15 reps</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
@@ -1160,7 +1171,7 @@
     <div class="exercise-header">
       <div class="ex-icon ex-icon-core">🐛</div>
       <div class="ex-main"><div class="ex-name">Dead Bug</div><div class="ex-muscles">Deep core · Anti-extension · Lower back protection</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">10 reps / side</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 10/side</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
@@ -1179,7 +1190,7 @@
     <div class="exercise-header">
       <div class="ex-icon ex-icon-core">🌀</div>
       <div class="ex-main"><div class="ex-name">Russian Twists (with DB)</div><div class="ex-muscles">Obliques · Rotational core</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">15 reps / side</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 15/side</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
@@ -1197,7 +1208,7 @@
     <div class="exercise-header">
       <div class="ex-icon ex-icon-core">🚲</div>
       <div class="ex-main"><div class="ex-name">Bicycle Crunches</div><div class="ex-muscles">Obliques · Upper abs · Full core</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">20 reps / side</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 20/side</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
@@ -1335,6 +1346,7 @@ function startCircuit() {
   document.getElementById('circuit-main').style.display = 'flex';
   document.getElementById('circuit-done').style.display = 'none';
   acquireWakeLock();
+  resetRoundDots();
   buildDots();
   updateCircuitUI();
   runCircuit();
@@ -1374,12 +1386,14 @@ function advanceCircuit() {
         clearInterval(cir.interval);
         cir.active = false;
         releaseWakeLock();
+        fillRoundDot(cir.round);
         ding('round');
         document.getElementById('circuit-main').style.display = 'none';
         document.getElementById('circuit-done').style.display = 'block';
         return;
       }
       // Between rounds
+      fillRoundDot(cir.round);
       cir.phase = 'round_rest';
       cir.remaining = ROUND_SECS;
       cir.totalSecs = ROUND_SECS;
@@ -1454,6 +1468,22 @@ function buildDots() {
     const d = document.createElement('div');
     d.className = 'circuit-ex-dot' + (i < cir.exIdx ? ' done' : i === cir.exIdx ? ' active' : '');
     c.appendChild(d);
+  });
+}
+
+// ── Round tracker circles ────────────────────────────────────
+function toggleRoundDot(n) {
+  const dot = document.getElementById('rd-' + n);
+  if (dot) dot.classList.toggle('filled');
+}
+function fillRoundDot(n) {
+  const dot = document.getElementById('rd-' + n);
+  if (dot) dot.classList.add('filled');
+}
+function resetRoundDots() {
+  [1, 2, 3].forEach(n => {
+    const d = document.getElementById('rd-' + n);
+    if (d) d.classList.remove('filled');
   });
 }
 
@@ -1664,8 +1694,7 @@ function initCards(dayId) {
     const setPill = card.querySelector('.ex-pill.sets');
     if (!setPill) return;
     const setsMatch = setPill.textContent.match(/(\d+)\s*sets?/i);
-    if (!setsMatch) return;
-    const numSets  = parseInt(setsMatch[1]);
+    const numSets  = setsMatch ? parseInt(setsMatch[1]) : 1;
     const restSecs = parseRest(card);
     const exName   = card.querySelector('.ex-name')?.textContent?.trim() || ('ex-' + i);
     card.dataset.initialized = '1';

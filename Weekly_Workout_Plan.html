@@ -153,6 +153,54 @@
   .finish-workout-btn:active { transform: scale(0.98); }
 
   @keyframes fadeInScale { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+
+  /* ── Week tracker + unit toggle ── */
+  .hero-bottom { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 18px; flex-wrap: wrap; }
+  .week-badge { background: rgba(232,184,75,0.12); border: 1px solid rgba(232,184,75,0.3); border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; color: #e8b84b; font-weight: 700; cursor: default; }
+  .start-program-btn { background: none; border: 1px solid #333; border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; color: #888; cursor: pointer; transition: all 0.2s; }
+  .start-program-btn:hover { border-color: #e8b84b; color: #e8b84b; }
+  .unit-toggle { display: flex; background: #1a1a1a; border-radius: 20px; border: 1px solid #2a2a2a; overflow: hidden; }
+  .unit-btn { padding: 6px 14px; font-size: 0.78rem; font-weight: 700; background: none; border: none; color: #555; cursor: pointer; transition: all 0.15s; }
+  .unit-btn.active { background: #e8b84b; color: #000; }
+
+  /* ── Circuit start button ── */
+  .circuit-launch-wrap { padding: 0 0 4px; }
+  .circuit-launch-btn { width: 100%; background: linear-gradient(135deg, #e8b84b, #f0c460); color: #000; font-weight: 800; font-size: 0.95rem; border: none; border-radius: 12px; padding: 14px; cursor: pointer; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  /* ── Circuit overlay ── */
+  .circuit-overlay { position: fixed; inset: 0; background: #0a0a14; z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .circuit-overlay.active { display: flex; animation: fadeInScale 0.25s ease; }
+  .circuit-overlay.flash { background: #1a1a0a; }
+  .circuit-top { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .circuit-stop-btn { background: none; border: 1px solid #333; border-radius: 20px; padding: 8px 16px; color: #666; font-size: 0.8rem; cursor: pointer; }
+  .circuit-round-badge { background: rgba(232,184,75,0.12); border: 1px solid rgba(232,184,75,0.25); border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; color: #e8b84b; }
+  .circuit-pause-btn { background: none; border: 1px solid #333; border-radius: 20px; padding: 8px 16px; color: #888; font-size: 0.8rem; cursor: pointer; }
+  .circuit-phase-label { font-size: 0.75rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+  .circuit-phase-label.work { color: #e8b84b; }
+  .circuit-phase-label.rest { color: #4ae8a0; }
+  .circuit-phase-label.round-rest { color: #4aade8; }
+  .circuit-ex-icon-big { font-size: 4rem; margin-bottom: 8px; line-height: 1; }
+  .circuit-ex-name-big { font-size: 1.5rem; font-weight: 800; color: #fff; text-align: center; margin-bottom: 6px; line-height: 1.2; }
+  .circuit-ex-sub { font-size: 0.8rem; color: #666; margin-bottom: 28px; }
+  .circuit-countdown-big { font-size: 6rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 20px; }
+  .circuit-countdown-big.work { color: #e8b84b; }
+  .circuit-countdown-big.rest { color: #4ae8a0; }
+  .circuit-countdown-big.round-rest { color: #4aade8; }
+  .circuit-progress-bar { width: 100%; max-width: 320px; height: 5px; background: #1a1a1a; border-radius: 3px; overflow: hidden; margin-bottom: 24px; }
+  .circuit-progress-fill { height: 100%; border-radius: 3px; transition: width 1s linear; }
+  .circuit-progress-fill.work { background: #e8b84b; }
+  .circuit-progress-fill.rest { background: #4ae8a0; }
+  .circuit-progress-fill.round-rest { background: #4aade8; }
+  .circuit-next-label { font-size: 0.7rem; color: #444; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .circuit-next-ex { font-size: 0.9rem; color: #888; font-weight: 600; }
+  .circuit-ex-dots { display: flex; gap: 6px; margin-top: 24px; }
+  .circuit-ex-dot { width: 8px; height: 8px; border-radius: 50%; background: #222; transition: background 0.2s; }
+  .circuit-ex-dot.active { background: #e8b84b; }
+  .circuit-ex-dot.done { background: #444; }
+  .circuit-done-screen { text-align: center; }
+  .circuit-done-screen h2 { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 10px; }
+  .circuit-done-screen p { color: #888; font-size: 0.95rem; margin-bottom: 28px; }
+  .circuit-done-btn { background: #e8b84b; color: #000; font-weight: 800; border: none; border-radius: 12px; padding: 14px 32px; font-size: 0.95rem; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -165,6 +213,13 @@
     <div class="hero-stat"><div class="val">3</div><div class="lbl">Lifting Days</div></div>
     <div class="hero-stat"><div class="val">1</div><div class="lbl">Cardio Day</div></div>
     <div class="hero-stat"><div class="val">1</div><div class="lbl">Conditioning</div></div>
+  </div>
+  <div class="hero-bottom">
+    <span id="week-badge"></span>
+    <div class="unit-toggle">
+      <button class="unit-btn active" id="unit-kg" onclick="setUnit('kg')">KG</button>
+      <button class="unit-btn" id="unit-lbs" onclick="setUnit('lbs')">LBS</button>
+    </div>
   </div>
 </div>
 
@@ -877,7 +932,7 @@
     <div class="exercise-header">
       <div class="ex-icon ex-icon-pull">📐</div>
       <div class="ex-main"><div class="ex-name">Half-Kneeling Cable Row</div><div class="ex-muscles">Mid-back · Rhomboids · Rear deltoid</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 10/side</div><div class="ex-pill">90 sec rest</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 10/side</div><div class="ex-pill">90 sec rest</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
@@ -896,7 +951,7 @@
     <div class="exercise-header">
       <div class="ex-icon ex-icon-push">🪶</div>
       <div class="ex-main"><div class="ex-name">Bent-Over DB Rear Delt Fly</div><div class="ex-muscles">Posterior deltoid · Upper back</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 12–15</div><div class="ex-pill">60 sec rest</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div><div class="ex-pill">60 sec rest</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
@@ -915,7 +970,7 @@
     <div class="exercise-header">
       <div class="ex-icon ex-icon-push">↔️</div>
       <div class="ex-main"><div class="ex-name">DB Lateral Raise</div><div class="ex-muscles">Lateral deltoid · Shoulder width</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">2 sets × 12–15</div><div class="ex-pill">Last set → failure</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">3 sets × 12–15</div><div class="ex-pill">Last set → failure</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
@@ -994,7 +1049,10 @@
     </div>
   </div>
 
-  <div class="section-label">Circuit — 4 Rounds · 40 sec work / 20 sec rest · 90 sec between rounds</div>
+  <div class="section-label">Circuit — 3 Rounds · 40 sec work / 20 sec rest · 90 sec between rounds</div>
+  <div class="circuit-launch-wrap">
+    <button class="circuit-launch-btn" onclick="startCircuit()">▶ &nbsp;Start Circuit Timer</button>
+  </div>
 
   <div class="exercise-card" onclick="toggleEx(this)">
     <div class="exercise-header">
@@ -1020,7 +1078,7 @@
     </div>
     <div class="exercise-body">
       <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
-        <div class="cue-item"><div class="cue-num">→</div>As many clean reps as possible. When form breaks, switch to a resistance band for the remaining time. Don't kip — quality reps only.</div>
+        <div class="cue-item"><div class="cue-num">→</div>Max reps in 40 sec — you don't hang the whole time. Do as many clean reps as you can, rest a few seconds at the bottom, then grind out more until time's up. When form completely breaks, use a band for the remaining seconds. No kipping.</div>
       </div></div>
       <a class="watch-btn" href="https://www.youtube.com/results?search_query=pull+up+proper+form+strict" target="_blank">▶ Watch Demo</a>
     </div>
@@ -1074,23 +1132,24 @@
     </div>
   </div>
 
-  <div class="section-label">Core Finisher — 3 Rounds · Tap each for full instructions</div>
+  <div class="section-label">Core Finisher — 2 Rounds · Tap each for full instructions</div>
 
   <div class="exercise-card" onclick="toggleEx(this)">
     <div class="exercise-header">
-      <div class="ex-icon ex-icon-core">🧱</div>
-      <div class="ex-main"><div class="ex-name">Plank</div><div class="ex-muscles">Full core · Anti-extension stability</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">45 sec</div></div>
+      <div class="ex-icon ex-icon-core">🦵</div>
+      <div class="ex-main"><div class="ex-name">Hanging Knee Raises</div><div class="ex-muscles">Lower abs · Hip flexors · Core</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">12–15 reps</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
+      <div class="note-box"><strong>You're already at the pull-up bar — use it.</strong> One of the best lower ab exercises you can do. Progress to straight leg raises when you're ready.</div>
       <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
-        <div class="cue-item"><div class="cue-num">1</div>Forearms on floor, elbows under shoulders. Up on toes — body in one straight line</div>
-        <div class="cue-item"><div class="cue-num">2</div>Brace your abs like someone's about to kick you in the stomach — hold that tension the whole time</div>
-        <div class="cue-item"><div class="cue-num">3</div>Squeeze your glutes. Don't let your hips sag or pike up</div>
-        <div class="cue-item"><div class="cue-num">4</div>Breathe normally. Look at a spot on the floor — don't crane your neck up</div>
+        <div class="cue-item"><div class="cue-num">1</div>Hang from the pull-up bar, arms fully extended, shoulders packed (don't just hang passively)</div>
+        <div class="cue-item"><div class="cue-num">2</div>Tuck your pelvis slightly — this engages abs before the movement even starts</div>
+        <div class="cue-item"><div class="cue-num">3</div>Drive knees up toward your chest using your abs — not hip flexors swinging. Slow and controlled</div>
+        <div class="cue-item"><div class="cue-num">4</div>Lower slowly — resist gravity on the way down. The lowering phase is half the work</div>
       </div></div>
-      <a class="watch-btn" href="https://www.youtube.com/results?search_query=plank+proper+form+core+exercise+tutorial" target="_blank">▶ Watch Demo</a>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=hanging+knee+raises+abs+proper+form" target="_blank">▶ Watch Demo</a>
     </div>
   </div>
 
@@ -1133,20 +1192,19 @@
 
   <div class="exercise-card" onclick="toggleEx(this)">
     <div class="exercise-header">
-      <div class="ex-icon ex-icon-core">⚡</div>
-      <div class="ex-main"><div class="ex-name">Hollow Body Hold</div><div class="ex-muscles">Deep abs · Full core compression</div></div>
-      <div class="ex-sets-row"><div class="ex-pill sets">20–30 sec</div></div>
+      <div class="ex-icon ex-icon-core">🚲</div>
+      <div class="ex-main"><div class="ex-name">Bicycle Crunches</div><div class="ex-muscles">Obliques · Upper abs · Full core</div></div>
+      <div class="ex-sets-row"><div class="ex-pill sets">20 reps / side</div></div>
       <div class="ex-chevron">▼</div>
     </div>
     <div class="exercise-body">
-      <div class="note-box"><strong>The hardest ab exercise in this program.</strong> If you can hold 30 sec with perfect form, your core is genuinely strong. Start at 10–15 sec if needed and build up.</div>
       <div class="form-cues"><h4>How to do it</h4><div class="cue-list">
-        <div class="cue-item"><div class="cue-num">1</div>Lie on your back. Arms overhead, legs straight. Press lower back FLAT into the floor</div>
-        <div class="cue-item"><div class="cue-num">2</div>Lift arms, shoulders, and legs off the floor simultaneously — creating a "banana" shape</div>
-        <div class="cue-item"><div class="cue-num">3</div>Lower back must stay pressed into the floor — if it arches, bend your knees or raise your legs higher</div>
-        <div class="cue-item"><div class="cue-num">4</div>Hold and breathe. If you can hold easily for 30 sec, add ankle weights or lower your legs</div>
+        <div class="cue-item"><div class="cue-num">1</div>Lie on your back, hands loosely behind your head — don't pull your neck. Feet off the floor, knees at 90°</div>
+        <div class="cue-item"><div class="cue-num">2</div>Bring your right elbow toward your left knee while extending the right leg straight out</div>
+        <div class="cue-item"><div class="cue-num">3</div>The rotation comes from your ribcage toward your hip — not your elbow chasing your knee</div>
+        <div class="cue-item"><div class="cue-num">4</div>Slow and controlled beats fast and sloppy every time. Feel the oblique squeeze at the top of each rep</div>
       </div></div>
-      <a class="watch-btn" href="https://www.youtube.com/results?search_query=hollow+body+hold+gymnastics+core+tutorial" target="_blank">▶ Watch Demo</a>
+      <a class="watch-btn" href="https://www.youtube.com/results?search_query=bicycle+crunches+proper+form+obliques" target="_blank">▶ Watch Demo</a>
     </div>
   </div>
 
@@ -1165,11 +1223,36 @@
 <!-- Workout complete modal -->
 <div class="complete-modal" id="complete-modal">
   <div class="complete-card">
-    <div class="complete-emoji">🏋️</div>
-    <div class="complete-title">Workout Done!</div>
-    <div class="complete-sub" id="complete-sub">You crushed it. Rest up — you've earned it.</div>
-    <button class="next-day-btn" id="next-day-btn" onclick="goNextDay()">Next workout →</button>
-    <button class="dismiss-btn" onclick="document.getElementById('complete-modal').classList.remove('active')">Stay here</button>
+    <div class="complete-emoji">🏆</div>
+    <div class="complete-title">That's a Wrap!</div>
+    <div class="complete-sub" id="complete-sub"></div>
+    <button class="dismiss-btn" style="margin-top:8px" onclick="document.getElementById('complete-modal').classList.remove('active')">Close</button>
+  </div>
+</div>
+
+<!-- Circuit overlay -->
+<div class="circuit-overlay" id="circuit-overlay">
+  <div id="circuit-main" style="width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center">
+    <div class="circuit-top">
+      <button class="circuit-stop-btn" onclick="stopCircuit()">✕ Stop</button>
+      <div class="circuit-round-badge">Round <span id="cir-round">1</span> / 3</div>
+      <button class="circuit-pause-btn" id="cir-pause-btn" onclick="pauseCircuit()">⏸ Pause</button>
+    </div>
+    <div class="circuit-phase-label work" id="cir-phase-label">WORK</div>
+    <div class="circuit-ex-icon-big" id="cir-icon">🔔</div>
+    <div class="circuit-ex-name-big" id="cir-name">Kettlebell Swings</div>
+    <div class="circuit-ex-sub" id="cir-sub">Exercise 1 of 5</div>
+    <div class="circuit-countdown-big work" id="cir-count">40</div>
+    <div class="circuit-progress-bar"><div class="circuit-progress-fill work" id="cir-fill" style="width:100%"></div></div>
+    <div class="circuit-next-label">Up next</div>
+    <div class="circuit-next-ex" id="cir-next">Pull-Ups ⬆️</div>
+    <div class="circuit-ex-dots" id="cir-dots"></div>
+  </div>
+  <div class="circuit-done-screen" id="circuit-done" style="display:none">
+    <div style="font-size:3.5rem;margin-bottom:16px">🔥</div>
+    <h2>Circuit Done!</h2>
+    <p>3 rounds · 5 exercises · You crushed it.</p>
+    <button class="circuit-done-btn" onclick="stopCircuit()">Back to workout</button>
   </div>
 </div>
 
@@ -1177,6 +1260,199 @@
 const DAY_ORDER = ['day1','day2','day3','day4','day5'];
 const DAY_NAMES = { day1:'Tuesday', day2:'Wednesday', day3:'Thursday', day4:'Friday', day5:'Monday' };
 let activeTimer = null;
+
+// ── Week tracker ──────────────────────────────────────────────
+function initWeekTracker() {
+  const badge = document.getElementById('week-badge');
+  const start = localStorage.getItem('program-start');
+  if (start) {
+    const weeks = Math.floor((Date.now() - parseInt(start)) / (7 * 24 * 3600 * 1000)) + 1;
+    badge.textContent = `Week ${weeks}`;
+    badge.className = 'week-badge';
+    badge.title = 'Click to reset program start date';
+    badge.style.cursor = 'pointer';
+    badge.onclick = () => { if (confirm('Reset program start date to today?')) { localStorage.setItem('program-start', Date.now()); initWeekTracker(); }};
+  } else {
+    badge.innerHTML = '<button class="start-program-btn" onclick="setProgramStart()">📅 Start Program</button>';
+  }
+}
+function setProgramStart() {
+  localStorage.setItem('program-start', Date.now());
+  initWeekTracker();
+}
+
+// ── Unit toggle ───────────────────────────────────────────────
+let currentUnit = localStorage.getItem('unit') || 'kg';
+function initUnit() {
+  document.getElementById('unit-kg').classList.toggle('active', currentUnit === 'kg');
+  document.getElementById('unit-lbs').classList.toggle('active', currentUnit === 'lbs');
+  document.querySelectorAll('.weight-input').forEach(inp => {
+    inp.placeholder = currentUnit;
+  });
+}
+function setUnit(u) {
+  currentUnit = u;
+  localStorage.setItem('unit', u);
+  initUnit();
+}
+
+// ── Wake lock ─────────────────────────────────────────────────
+let wakeLock = null;
+async function acquireWakeLock() {
+  if ('wakeLock' in navigator) {
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+  }
+}
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+// ── Circuit timer ─────────────────────────────────────────────
+const CIRCUIT_EX = [
+  { name: 'Kettlebell Swings', icon: '🔔' },
+  { name: 'Pull-Ups',          icon: '⬆️' },
+  { name: 'DB Thrusters',      icon: '🏋️' },
+  { name: 'Rowing Sprint',     icon: '🚣' },
+  { name: 'Push-Ups',          icon: '💪' },
+];
+const WORK_SECS  = 40;
+const REST_SECS  = 20;
+const ROUND_SECS = 90;
+const TOTAL_ROUNDS = 3;
+
+let cir = { active: false, paused: false, round: 1, exIdx: 0,
+            phase: 'work', remaining: WORK_SECS, interval: null, totalSecs: WORK_SECS };
+
+function startCircuit() {
+  // Unlock audio on user gesture
+  getAudioCtx();
+  cir = { active: true, paused: false, round: 1, exIdx: 0,
+          phase: 'work', remaining: WORK_SECS, interval: null, totalSecs: WORK_SECS };
+  document.getElementById('circuit-overlay').classList.add('active');
+  document.getElementById('circuit-main').style.display = 'flex';
+  document.getElementById('circuit-done').style.display = 'none';
+  acquireWakeLock();
+  buildDots();
+  updateCircuitUI();
+  runCircuit();
+}
+
+function stopCircuit() {
+  clearInterval(cir.interval);
+  cir.active = false;
+  document.getElementById('circuit-overlay').classList.remove('active');
+  releaseWakeLock();
+}
+
+function pauseCircuit() {
+  if (!cir.active) return;
+  cir.paused = !cir.paused;
+  document.getElementById('cir-pause-btn').textContent = cir.paused ? '▶ Resume' : '⏸ Pause';
+}
+
+function runCircuit() {
+  clearInterval(cir.interval);
+  cir.interval = setInterval(() => {
+    if (cir.paused) return;
+    cir.remaining--;
+    updateCircuitUI();
+    if (cir.remaining <= 0) advanceCircuit();
+  }, 1000);
+}
+
+function advanceCircuit() {
+  if (cir.phase === 'work') {
+    ding();
+    flashScreen();
+    // Check if last exercise in round
+    if (cir.exIdx >= CIRCUIT_EX.length - 1) {
+      if (cir.round >= TOTAL_ROUNDS) {
+        // Done!
+        clearInterval(cir.interval);
+        cir.active = false;
+        releaseWakeLock();
+        ding('round');
+        document.getElementById('circuit-main').style.display = 'none';
+        document.getElementById('circuit-done').style.display = 'block';
+        return;
+      }
+      // Between rounds
+      cir.phase = 'round_rest';
+      cir.remaining = ROUND_SECS;
+      cir.totalSecs = ROUND_SECS;
+    } else {
+      cir.phase = 'rest';
+      cir.remaining = REST_SECS;
+      cir.totalSecs = REST_SECS;
+    }
+  } else if (cir.phase === 'rest') {
+    ding();
+    flashScreen();
+    cir.exIdx++;
+    cir.phase = 'work';
+    cir.remaining = WORK_SECS;
+    cir.totalSecs = WORK_SECS;
+  } else if (cir.phase === 'round_rest') {
+    ding('round');
+    flashScreen();
+    cir.round++;
+    cir.exIdx = 0;
+    cir.phase = 'work';
+    cir.remaining = WORK_SECS;
+    cir.totalSecs = WORK_SECS;
+  }
+  buildDots();
+  updateCircuitUI();
+}
+
+function updateCircuitUI() {
+  const ex   = CIRCUIT_EX[cir.exIdx];
+  const next = CIRCUIT_EX[cir.exIdx + 1];
+  const phaseClass = cir.phase === 'work' ? 'work' : cir.phase === 'rest' ? 'rest' : 'round-rest';
+  const phaseLabel = cir.phase === 'work' ? 'WORK' : cir.phase === 'rest' ? 'REST' : 'REST BETWEEN ROUNDS';
+
+  document.getElementById('cir-round').textContent = cir.round;
+  document.getElementById('cir-phase-label').textContent = phaseLabel;
+  document.getElementById('cir-phase-label').className = `circuit-phase-label ${phaseClass}`;
+  document.getElementById('cir-count').textContent = cir.remaining;
+  document.getElementById('cir-count').className = `circuit-countdown-big ${phaseClass}`;
+
+  if (cir.phase === 'work' || cir.phase === 'rest') {
+    document.getElementById('cir-icon').textContent = ex.icon;
+    document.getElementById('cir-name').textContent = ex.name;
+    document.getElementById('cir-sub').textContent = `Exercise ${cir.exIdx + 1} of ${CIRCUIT_EX.length}`;
+  } else {
+    document.getElementById('cir-icon').textContent = '💨';
+    document.getElementById('cir-name').textContent = 'Catch your breath';
+    document.getElementById('cir-sub').textContent = `Round ${cir.round + 1} coming up`;
+  }
+
+  const pct = (cir.remaining / cir.totalSecs) * 100;
+  const fill = document.getElementById('cir-fill');
+  fill.style.width = pct + '%';
+  fill.className = `circuit-progress-fill ${phaseClass}`;
+
+  const nextEl = document.getElementById('cir-next');
+  if (cir.phase === 'round_rest') {
+    nextEl.textContent = `${CIRCUIT_EX[0].icon} ${CIRCUIT_EX[0].name}`;
+  } else if (next) {
+    nextEl.textContent = `${next.icon} ${next.name}`;
+  } else if (cir.round < TOTAL_ROUNDS) {
+    nextEl.textContent = `Rest · then Round ${cir.round + 1}`;
+  } else {
+    nextEl.textContent = 'Last exercise — give it everything!';
+  }
+}
+
+function buildDots() {
+  const c = document.getElementById('cir-dots');
+  c.innerHTML = '';
+  CIRCUIT_EX.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'circuit-ex-dot' + (i < cir.exIdx ? ' done' : i === cir.exIdx ? ' active' : '');
+    c.appendChild(d);
+  });
+}
 
 // ── Navigation ──────────────────────────────────────────────
 function showDay(dayId) {
@@ -1280,38 +1556,56 @@ function parseRest(card) {
 }
 
 // ── Audio ding ───────────────────────────────────────────────
-function ding() {
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function ding(type = 'normal') {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    [880, 1100, 1320].forEach((freq, i) => {
+    const ctx = getAudioCtx();
+    const freqs = type === 'round' ? [523, 659, 784, 1047] : [880, 1100, 1320];
+    const gain  = type === 'round' ? 0.7 : 0.6;
+    freqs.forEach((freq, i) => {
       const o = ctx.createOscillator();
       const g = ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
       o.frequency.value = freq;
       o.type = 'sine';
-      const t = ctx.currentTime + i * 0.15;
+      const t = ctx.currentTime + i * 0.14;
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.25, t + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-      o.start(t); o.stop(t + 0.6);
+      g.gain.linearRampToValueAtTime(gain, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+      o.start(t); o.stop(t + 0.7);
     });
   } catch(e) {}
 }
+function flashScreen() {
+  const ov = document.getElementById('circuit-overlay');
+  if (!ov) return;
+  ov.style.background = '#1e1a04';
+  setTimeout(() => { ov.style.background = ''; }, 180);
+}
 
 // ── Workout complete ─────────────────────────────────────────
+const COMPLETE_MESSAGES = [
+  "Beast mode. Rest up, eat well, come back stronger. 💪",
+  "Another one in the books. Your future self will thank you. 🔥",
+  "Job done. Go eat something good and get some sleep. 🥩",
+  "That's how it's done. Recovery starts now. 🧊",
+  "Consistency beats intensity. You showed up. That's everything. ✅",
+  "One more session closer to the physique. Keep stacking. 📈",
+];
 function triggerCelebration() {
-  const section = document.querySelector('.day-section.visible');
   confetti({ particleCount: 180, spread: 90, origin: { y: 0.55 },
     colors: ['#e8b84b','#4ae8a0','#e85d4a','#a04ae8','#4aade8'] });
   setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0 },
     colors: ['#e8b84b','#4ae8a0'] }), 300);
   setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1 },
     colors: ['#e85d4a','#a04ae8'] }), 500);
-
-  const idx = DAY_ORDER.indexOf(section?.id);
-  const next = DAY_ORDER[(idx + 1) % DAY_ORDER.length];
-  document.getElementById('complete-sub').textContent =
-    `You crushed it. Next up: ${DAY_NAMES[next] || 'Monday'}.`;
+  const msg = COMPLETE_MESSAGES[Math.floor(Math.random() * COMPLETE_MESSAGES.length)];
+  document.getElementById('complete-sub').textContent = msg;
   document.getElementById('complete-modal').classList.add('active');
 }
 
@@ -1353,7 +1647,11 @@ if ('serviceWorker' in navigator) {
 }
 
 // Init the default visible day on load
-document.addEventListener('DOMContentLoaded', () => initCards('day1'));
+document.addEventListener('DOMContentLoaded', () => {
+  initCards('day1');
+  initWeekTracker();
+  initUnit();
+});
 
 function initCards(dayId) {
   const section = document.getElementById(dayId);
@@ -1395,7 +1693,7 @@ function initCards(dayId) {
     weightRow.className = 'weight-row';
     const saved = localStorage.getItem('w:' + exName) || '';
     weightRow.innerHTML = `<span class="weight-label">⚖️ Weight used</span>
-      <input class="weight-input" type="number" placeholder="kg / lbs" min="0" step="0.5" value="${saved}">`;
+      <input class="weight-input" type="number" placeholder="${currentUnit}" min="0" step="0.5" value="${saved}">`;
     weightRow.querySelector('input').addEventListener('change', function() {
       localStorage.setItem('w:' + exName, this.value);
     });

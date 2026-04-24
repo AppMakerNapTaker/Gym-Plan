@@ -1538,6 +1538,7 @@ function tapDot(dot, card) {
 
 function startTimer(card) {
   if (activeTimer) clearInterval(activeTimer);
+  getAudioCtx(); // unlock audio on the user-gesture that triggered this
   card.classList.add('open');
 
   const widget   = card.querySelector('.rest-timer-widget');

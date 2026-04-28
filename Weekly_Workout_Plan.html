@@ -158,6 +158,7 @@
   /* ── Week tracker + unit toggle ── */
   .hero-date { font-size: 0.78rem; color: #666; margin-top: 16px; letter-spacing: 0.3px; }
   .hero-bottom { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+  .week-select { background: rgba(232,184,75,0.12); border: 1px solid rgba(232,184,75,0.3); border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; color: #e8b84b; font-weight: 700; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; text-align: center; }
   .week-badge { background: rgba(232,184,75,0.12); border: 1px solid rgba(232,184,75,0.3); border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; color: #e8b84b; font-weight: 700; cursor: default; }
   .start-program-btn { background: none; border: 1px solid #333; border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; color: #888; cursor: pointer; transition: all 0.2s; }
   .start-program-btn:hover { border-color: #e8b84b; color: #e8b84b; }
@@ -225,7 +226,17 @@
   </div>
   <div class="hero-date" id="today-date"></div>
   <div class="hero-bottom">
-    <span id="week-badge"></span>
+    <select id="week-select" class="week-select" onchange="setWeek(this.value)">
+      <option value="1">Week 1</option>
+      <option value="2">Week 2</option>
+      <option value="3">Week 3</option>
+      <option value="4">Week 4</option>
+      <option value="5">Week 5</option>
+      <option value="6">Week 6</option>
+      <option value="7">Week 7</option>
+      <option value="8">Week 8</option>
+      <option value="9">Week 9 — Deload</option>
+    </select>
     <div class="unit-toggle">
       <button class="unit-btn active" id="unit-kg" onclick="setUnit('kg')">KG</button>
       <button class="unit-btn" id="unit-lbs" onclick="setUnit('lbs')">LBS</button>
@@ -1278,30 +1289,13 @@ const DAY_NAMES = { day1:'Tuesday', day2:'Wednesday', day3:'Thursday', day4:'Fri
 let activeTimer = null;
 
 // ── Week tracker ──────────────────────────────────────────────
-function calendarDay(ms) {
-  // Strip time — returns midnight timestamp for a given ms value
-  const d = new Date(ms);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-}
 function initWeekTracker() {
-  const badge = document.getElementById('week-badge');
-  const start = localStorage.getItem('program-start');
-  if (start) {
-    // Compare calendar days so time-of-day doesn't affect the week number
-    const daysDiff = Math.floor((calendarDay(Date.now()) - calendarDay(parseInt(start))) / (24 * 3600 * 1000));
-    const weeks = Math.floor(daysDiff / 7) + 1;
-    badge.textContent = `Week ${weeks}`;
-    badge.className = 'week-badge';
-    badge.title = 'Click to reset program start date';
-    badge.style.cursor = 'pointer';
-    badge.onclick = () => { if (confirm('Reset program start date to today?')) { localStorage.setItem('program-start', Date.now()); initWeekTracker(); }};
-  } else {
-    badge.innerHTML = '<button class="start-program-btn" onclick="setProgramStart()">📅 Start Program</button>';
-  }
+  const saved = parseInt(localStorage.getItem('program-week') || '1');
+  const sel = document.getElementById('week-select');
+  sel.value = Math.min(Math.max(saved, 1), 9);
 }
-function setProgramStart() {
-  localStorage.setItem('program-start', Date.now());
-  initWeekTracker();
+function setWeek(val) {
+  localStorage.setItem('program-week', val);
 }
 
 // ── Today's date ─────────────────────────────────────────────

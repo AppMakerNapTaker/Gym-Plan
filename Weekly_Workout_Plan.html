@@ -1704,8 +1704,14 @@ if ('serviceWorker' in navigator) {
 }
 
 // Init the default visible day on load
+function getTodayDay() {
+  const dow = new Date().getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  const map = { 1:'day1', 2:'day2', 3:'day3', 4:'day4', 5:'day5' };
+  return map[dow] || 'day1'; // weekend → Monday
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  initCards('day1');
+  showDay(getTodayDay());
   initWeekTracker();
   initUnit();
   initTodayDate();

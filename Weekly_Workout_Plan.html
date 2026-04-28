@@ -156,7 +156,8 @@
   @keyframes fadeInScale { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
 
   /* ── Week tracker + unit toggle ── */
-  .hero-bottom { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 18px; flex-wrap: wrap; }
+  .hero-date { font-size: 0.78rem; color: #666; margin-top: 16px; letter-spacing: 0.3px; }
+  .hero-bottom { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
   .week-badge { background: rgba(232,184,75,0.12); border: 1px solid rgba(232,184,75,0.3); border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; color: #e8b84b; font-weight: 700; cursor: default; }
   .start-program-btn { background: none; border: 1px solid #333; border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; color: #888; cursor: pointer; transition: all 0.2s; }
   .start-program-btn:hover { border-color: #e8b84b; color: #e8b84b; }
@@ -222,6 +223,7 @@
     <div class="hero-stat"><div class="val">1</div><div class="lbl">Cardio Day</div></div>
     <div class="hero-stat"><div class="val">1</div><div class="lbl">Conditioning</div></div>
   </div>
+  <div class="hero-date" id="today-date"></div>
   <div class="hero-bottom">
     <span id="week-badge"></span>
     <div class="unit-toggle">
@@ -1276,11 +1278,18 @@ const DAY_NAMES = { day1:'Tuesday', day2:'Wednesday', day3:'Thursday', day4:'Fri
 let activeTimer = null;
 
 // ── Week tracker ──────────────────────────────────────────────
+function calendarDay(ms) {
+  // Strip time — returns midnight timestamp for a given ms value
+  const d = new Date(ms);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
 function initWeekTracker() {
   const badge = document.getElementById('week-badge');
   const start = localStorage.getItem('program-start');
   if (start) {
-    const weeks = Math.floor((Date.now() - parseInt(start)) / (7 * 24 * 3600 * 1000)) + 1;
+    // Compare calendar days so time-of-day doesn't affect the week number
+    const daysDiff = Math.floor((calendarDay(Date.now()) - calendarDay(parseInt(start))) / (24 * 3600 * 1000));
+    const weeks = Math.floor(daysDiff / 7) + 1;
     badge.textContent = `Week ${weeks}`;
     badge.className = 'week-badge';
     badge.title = 'Click to reset program start date';
@@ -1293,6 +1302,14 @@ function initWeekTracker() {
 function setProgramStart() {
   localStorage.setItem('program-start', Date.now());
   initWeekTracker();
+}
+
+// ── Today's date ─────────────────────────────────────────────
+function initTodayDate() {
+  const el = document.getElementById('today-date');
+  if (!el) return;
+  const d = new Date();
+  el.textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
 // ── Unit toggle ───────────────────────────────────────────────
@@ -1538,7 +1555,8 @@ function tapDot(dot, card) {
 
 function startTimer(card) {
   if (activeTimer) clearInterval(activeTimer);
-  getAudioCtx(); // unlock audio on the user-gesture that triggered this
+  getAudioCtx();       // unlock audio context on the user gesture
+  acquireWakeLock();   // keep screen on so audio isn't suspended
   card.classList.add('open');
 
   const widget   = card.querySelector('.rest-timer-widget');
@@ -1562,6 +1580,7 @@ function startTimer(card) {
       clearInterval(activeTimer);
       activeTimer = null;
       widget.classList.remove('active');
+      releaseWakeLock();
       ding();
     }
   }, 1000);
@@ -1570,6 +1589,7 @@ function startTimer(card) {
 function skipTimer(btn) {
   if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
   btn.closest('.rest-timer-widget').classList.remove('active');
+  releaseWakeLock();
 }
 
 function fmt(s) {
@@ -1592,27 +1612,36 @@ function parseRest(card) {
 // ── Audio ding ───────────────────────────────────────────────
 let audioCtx = null;
 function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (!audioCtx || audioCtx.state === 'closed') {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
   return audioCtx;
+}
+function playDingNotes(ctx, type) {
+  const freqs = type === 'round' ? [523, 659, 784, 1047] : [880, 1100, 1320];
+  const gain  = type === 'round' ? 0.7 : 0.6;
+  freqs.forEach((freq, i) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq;
+    o.type = 'sine';
+    const t = ctx.currentTime + i * 0.14;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+    o.start(t); o.stop(t + 0.7);
+  });
 }
 function ding(type = 'normal') {
   try {
     const ctx = getAudioCtx();
-    const freqs = type === 'round' ? [523, 659, 784, 1047] : [880, 1100, 1320];
-    const gain  = type === 'round' ? 0.7 : 0.6;
-    freqs.forEach((freq, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.value = freq;
-      o.type = 'sine';
-      const t = ctx.currentTime + i * 0.14;
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(gain, t + 0.04);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
-      o.start(t); o.stop(t + 0.7);
-    });
+    if (ctx.state === 'suspended') {
+      // Resume first (async), then play — handles iOS background suspension
+      ctx.resume().then(() => playDingNotes(ctx, type)).catch(() => {});
+    } else {
+      playDingNotes(ctx, type);
+    }
   } catch(e) {}
 }
 function flashScreen() {
@@ -1685,6 +1714,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCards('day1');
   initWeekTracker();
   initUnit();
+  initTodayDate();
 });
 
 function initCards(dayId) {
